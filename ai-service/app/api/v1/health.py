@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, Depends
 
 from app.config.settings import Settings, get_settings
@@ -103,6 +104,30 @@ async def readiness(
     )
 
 
+async def _check_mcp(settings: Settings) -> DependencyHealth:
+    start = time.time()
+    if not settings.MCP_SERVER_URLS:
+        return DependencyHealth(
+            name="mcp",
+            status=ComponentStatus.DEGRADED,
+            detail="No MCP servers configured",
+        )
+    url = settings.MCP_SERVER_URLS[0].rstrip("/") + "/health"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(url)
+            healthy = resp.status_code == 200
+    except Exception:
+        healthy = False
+    latency_ms = round((time.time() - start) * 1000, 2)
+    return DependencyHealth(
+        name="mcp",
+        status=ComponentStatus.HEALTHY if healthy else ComponentStatus.DEGRADED,
+        detail=f"URL: {url}" if healthy else f"MCP unreachable at {url}",
+        latency_ms=latency_ms,
+    )
+
+
 async def _collect_deps(settings: Settings) -> list[DependencyHealth]:
     deps: list[DependencyHealth] = []
     deps.append(await _check_openrouter(settings))
@@ -113,4 +138,5 @@ async def _collect_deps(settings: Settings) -> list[DependencyHealth]:
     deps.append(
         await _check_store(settings.PROMPT_STORE_PATH, "prompt_store")
     )
+    deps.append(await _check_mcp(settings))
     return deps

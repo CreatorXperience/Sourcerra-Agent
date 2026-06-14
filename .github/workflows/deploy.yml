@@ -43,6 +43,7 @@ jobs:
         run: |
           echo "Deploying to ${{ inputs.environment }}"
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+          echo "MCP Image: ${{ env.REGISTRY }}/ats-mcp:${{ inputs.image_tag }}"
 
       - name: Deploy to staging
         if: inputs.environment == 'staging'
@@ -56,25 +57,42 @@ jobs:
         run: |
           echo "Running production deployment..."
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+          echo "docker compose -f docker-compose.prod.yml pull"
+          echo "IMAGE_TAG=${{ inputs.image_tag }} docker compose -f docker-compose.prod.yml up -d"
 
       - name: Run migrations
         if: inputs.run_migrations
         run: |
           echo "Running database migrations..."
 
-      - name: Health check verification
+      - name: AI Service health check
         run: |
-          echo "Waiting for service to be healthy..."
+          echo "Waiting for AI Service to be healthy..."
           for i in $(seq 1 30); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health/live || echo "000")
             if [ "$STATUS" = "200" ]; then
-              echo "Service is healthy"
+              echo "AI Service is healthy"
               exit 0
             fi
             echo "Attempt $i: status=$STATUS, waiting..."
             sleep 5
           done
-          echo "Health check failed after 30 attempts"
+          echo "AI Service health check failed after 30 attempts"
+          exit 1
+
+      - name: MCP health check
+        run: |
+          echo "Waiting for MCP Server to be healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "MCP Server is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: status=$STATUS, waiting..."
+            sleep 5
+          done
+          echo "MCP health check failed after 30 attempts"
           exit 1
 
       - name: Rollback on failure
@@ -82,4 +100,5 @@ jobs:
         run: |
           echo "Deployment failed, initiating rollback..."
           echo "docker compose -f docker-compose.prod.yml down"
+          echo "docker compose -f docker-compose.prod.yml pull"
           echo "docker compose -f docker-compose.prod.yml up -d"

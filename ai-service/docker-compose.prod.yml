@@ -11,10 +11,13 @@ services:
       - EVALUATION_STORE_PATH=/app/data/evaluation
       - PROMPT_STORE_PATH=/app/data/evaluation
       - REDIS_URL=redis://redis:6379/0
+      - MCP_SERVER_URLS=http://ats-mcp:8001
     volumes:
       - app_data:/app/data
     depends_on:
       redis:
+        condition: service_healthy
+      ats-mcp:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -36,6 +39,35 @@ services:
         reservations:
           cpus: "0.5"
           memory: "512M"
+
+  ats-mcp:
+    image: ghcr.io/${GITHUB_REPOSITORY:-sourcerra/ats-mcp}:${IMAGE_TAG:-latest}
+    ports:
+      - "${MCP_PORT:-8001}:8001"
+    env_file:
+      - .env.production
+    environment:
+      - BACKEND_API_BASE_URL=http://host.docker.internal:3000/api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "1G"
+        reservations:
+          cpus: "0.25"
+          memory: "256M"
 
   redis:
     image: redis:7-alpine
