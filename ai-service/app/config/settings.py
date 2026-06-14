@@ -1,4 +1,6 @@
-from pydantic import model_validator
+import json
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,6 +36,20 @@ class Settings(BaseSettings):
     MCP_SERVER_URLS: list[str] = []
     MCP_CONNECTION_TIMEOUT: int = 10
     MCP_REQUEST_TIMEOUT: int = 60
+
+    @field_validator("MCP_SERVER_URLS", mode="before")
+    @classmethod
+    def parse_mcp_urls(cls, v: object) -> list[str]:
+        if isinstance(v, list | tuple):
+            return list(v)
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
+                return json.loads(v)
+            return [u.strip() for u in v.split(",") if u.strip()]
+        return []
 
     # Agents
     AGENT_MAX_ITERATIONS: int = 10
