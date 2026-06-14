@@ -1,6 +1,6 @@
 import json
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,23 +33,27 @@ class Settings(BaseSettings):
     BACKEND_API_TIMEOUT: int = 30
 
     # MCP
-    MCP_SERVER_URLS: list[str] = []
+    # Stored as str (not list) to avoid pydantic-settings JSON decode failure on plain string env vars
+    mcp_server_urls: str = Field(default="", alias="MCP_SERVER_URLS")
     MCP_CONNECTION_TIMEOUT: int = 10
     MCP_REQUEST_TIMEOUT: int = 60
 
-    @field_validator("MCP_SERVER_URLS", mode="before")
+    @property
+    def MCP_SERVER_URLS(self) -> list[str]:
+        raw = self.mcp_server_urls
+        if not raw:
+            return []
+        if raw.startswith("["):
+            return json.loads(raw)
+        return [u.strip() for u in raw.split(",") if u.strip()]
+
+    @model_validator(mode="before")
     @classmethod
-    def parse_mcp_urls(cls, v: object) -> list[str]:
-        if isinstance(v, list | tuple):
-            return list(v)
-        if isinstance(v, str):
-            v = v.strip()
-            if not v:
-                return []
-            if v.startswith("["):
-                return json.loads(v)
-            return [u.strip() for u in v.split(",") if u.strip()]
-        return []
+    def _coerce_mcp_urls(cls, data: dict) -> dict:
+        raw = data.get("MCP_SERVER_URLS")
+        if isinstance(raw, list | tuple):
+            data["MCP_SERVER_URLS"] = ",".join(raw)
+        return data
 
     # Agents
     AGENT_MAX_ITERATIONS: int = 10
