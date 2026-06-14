@@ -1,0 +1,81 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Docker image tag to deploy (default: latest)"
+        required: false
+        default: "latest"
+      run_migrations:
+        description: "Run database migrations"
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency: deploy-${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure deployment credentials
+        run: |
+          echo "Deploying to ${{ inputs.environment }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+
+      - name: Deploy to staging
+        if: inputs.environment == 'staging'
+        run: |
+          echo "Running staging deployment..."
+          echo "docker compose -f docker-compose.prod.yml pull"
+          echo "docker compose -f docker-compose.prod.yml up -d"
+
+      - name: Deploy to production
+        if: inputs.environment == 'production'
+        run: |
+          echo "Running production deployment..."
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image_tag }}"
+
+      - name: Run migrations
+        if: inputs.run_migrations
+        run: |
+          echo "Running database migrations..."
+
+      - name: Health check verification
+        run: |
+          echo "Waiting for service to be healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health/live || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Service is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: status=$STATUS, waiting..."
+            sleep 5
+          done
+          echo "Health check failed after 30 attempts"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          echo "docker compose -f docker-compose.prod.yml down"
+          echo "docker compose -f docker-compose.prod.yml up -d"

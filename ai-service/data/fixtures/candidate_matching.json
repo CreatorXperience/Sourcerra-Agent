@@ -1,0 +1,14 @@
+{
+  "workflow_name": "candidate_matching",
+  "input_data": {
+    "job_id": "job-1",
+    "candidates": [{"id": "cand-1", "name": "Alice Smith"}]
+  },
+  "output_data": {
+    "job_id": "job-1",
+    "job_title": "Senior Python Backend Engineer",
+    "top_candidates": [
+      {"candidate_id": "cand-1", "candidate_name": "Alice Smith", "overall_score": 92.0, "ranking": 1, "strengths": ["Python"], "weaknesses": ["No K8s"], "explanation": "Strong match"}
+    ]
+  }
+}

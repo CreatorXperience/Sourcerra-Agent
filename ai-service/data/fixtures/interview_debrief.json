@@ -1,0 +1,17 @@
+{
+  "workflow_name": "interview_debrief",
+  "input_data": {
+    "candidate_raw": [{"text": "{\"id\":\"cand-1\",\"name\":\"Alice Smith\"}"}],
+    "job_raw": [{"text": "{\"title\":\"Senior Backend Engineer\"}"}]
+  },
+  "output_data": {
+    "candidate_id": "cand-1",
+    "job_id": "job-1",
+    "interview_summary": "Alice performed well across all interview rounds.",
+    "validated_strengths": ["Python depth", "System design"],
+    "identified_concerns": ["Kubernetes gap"],
+    "further_evaluation_areas": ["Leadership"],
+    "overall_assessment": "Strong candidate.",
+    "recommended_next_step": "Move to Final Interview"
+  }
+}

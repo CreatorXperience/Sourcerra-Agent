@@ -1,0 +1,15 @@
+{
+  "workflow_name": "candidate_summary",
+  "input_data": {
+    "candidate_raw": [{"text": "{\"id\":\"cand-1\",\"name\":\"Alice Smith\",\"skills\":[\"Python\",\"AWS\"],\"stage\":\"INTERVIEW\"}"}],
+    "comments_raw": [{"text": "[{\"content\":\"Great communicator\"}]"}],
+    "tasks_raw": [{"text": "[{\"description\":\"Schedule interview\"}]"}]
+  },
+  "output_data": {
+    "candidate_name": "Alice Smith",
+    "overview": "Senior backend engineer with Python and AWS expertise.",
+    "recruiter_observations": ["Strong communication skills noted"],
+    "open_action_items": ["Schedule interview"],
+    "recommended_next_action": "Advance to final round"
+  }
+}

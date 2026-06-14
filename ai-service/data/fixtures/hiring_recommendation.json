@@ -1,0 +1,17 @@
+{
+  "workflow_name": "hiring_recommendation",
+  "input_data": {
+    "candidate_raw": [{"text": "{\"id\":\"cand-1\",\"name\":\"Alice Smith\",\"stage\":\"INTERVIEW\"}"}]
+  },
+  "output_data": {
+    "candidate_id": "cand-1",
+    "candidate_name": "Alice Smith",
+    "candidate_summary": "Strong backend candidate.",
+    "supporting_evidence": ["Technical score 4.5"],
+    "caution_evidence": ["K8s gap noted"],
+    "risk_factors": ["Missing required skill"],
+    "missing_information": ["References pending"],
+    "recruiter_recommendation": "Advance with Caution",
+    "confidence_level": "High"
+  }
+}
