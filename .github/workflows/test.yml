@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
 
+defaults:
+  run:
+    working-directory: ai-service
+
 env:
   PYTHON_VERSION: "3.12"
 
@@ -65,7 +69,7 @@ jobs:
         if: always()
         with:
           name: coverage-${{ matrix.python-version }}
-          path: coverage.xml
+          path: ai-service/coverage.xml
 
       - name: Check coverage threshold
         run: |
@@ -76,4 +80,4 @@ jobs:
         if: always()
         with:
           name: test-results-${{ matrix.python-version }}
-          path: .pytest_cache/
+          path: ai-service/.pytest_cache/

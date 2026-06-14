@@ -21,6 +21,10 @@ on:
         default: false
         type: boolean
 
+defaults:
+  run:
+    working-directory: ai-service
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
